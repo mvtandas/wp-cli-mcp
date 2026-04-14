@@ -18,58 +18,58 @@ setGlobalOptions({
 });
 
 // ─── Core ──────────────────────────────────────────────────
-server.tool("wp_core_version", "Get WordPress version", {}, async () => ({
+server.tool("wp_core_version", "Get the currently installed WordPress core version. Returns the version string (e.g. '6.7.1'). Useful for checking compatibility before installing plugins or themes.", {}, async () => ({
   content: [{ type: "text", text: JSON.stringify(await tools.wp_core_version(), null, 2) }],
 }));
 
-server.tool("wp_core_check_update", "Check for WordPress core updates", {}, async () => ({
+server.tool("wp_core_check_update", "Check if WordPress core updates are available. Returns a list of available versions with download URLs. Use this before running updates to see what's new.", {}, async () => ({
   content: [{ type: "text", text: JSON.stringify(await tools.wp_core_check_update(), null, 2) }],
 }));
 
 // ─── Plugins ───────────────────────────────────────────────
-server.tool("wp_plugin_list", "List all installed plugins with status", {}, async () => ({
+server.tool("wp_plugin_list", "List all installed WordPress plugins with their name, status (active/inactive/must-use), version, and update availability. Returns a JSON array of plugin objects.", {}, async () => ({
   content: [{ type: "text", text: JSON.stringify(await tools.wp_plugin_list(), null, 2) }],
 }));
 
-server.tool("wp_plugin_install", "Install a plugin from wordpress.org", {
-  slug: z.string().describe("Plugin slug (e.g. 'woocommerce', 'advanced-custom-fields')"),
-  activate: z.boolean().optional().describe("Activate after install"),
+server.tool("wp_plugin_install", "Install a WordPress plugin from the official wordpress.org plugin directory. Optionally activate it immediately after installation.", {
+  slug: z.string().describe("The plugin slug from wordpress.org (e.g. 'woocommerce', 'advanced-custom-fields', 'contact-form-7'). This is the URL-friendly name shown in the plugin's wordpress.org URL."),
+  activate: z.boolean().optional().describe("Whether to activate the plugin immediately after installation. Defaults to false."),
 }, async ({ slug, activate }) => ({
   content: [{ type: "text", text: JSON.stringify(await tools.wp_plugin_install(slug, activate), null, 2) }],
 }));
 
-server.tool("wp_plugin_activate", "Activate an installed plugin", {
-  slug: z.string().describe("Plugin slug"),
+server.tool("wp_plugin_activate", "Activate an installed but inactive WordPress plugin. The plugin must already be installed.", {
+  slug: z.string().describe("The plugin slug to activate (e.g. 'woocommerce'). Must match an installed plugin."),
 }, async ({ slug }) => ({
   content: [{ type: "text", text: JSON.stringify(await tools.wp_plugin_activate(slug), null, 2) }],
 }));
 
-server.tool("wp_plugin_deactivate", "Deactivate a plugin", {
-  slug: z.string().describe("Plugin slug"),
+server.tool("wp_plugin_deactivate", "Deactivate an active WordPress plugin without removing it. The plugin files remain on disk and can be reactivated later.", {
+  slug: z.string().describe("The plugin slug to deactivate (e.g. 'woocommerce'). Must be currently active."),
 }, async ({ slug }) => ({
   content: [{ type: "text", text: JSON.stringify(await tools.wp_plugin_deactivate(slug), null, 2) }],
 }));
 
-server.tool("wp_plugin_delete", "Delete a plugin", {
-  slug: z.string().describe("Plugin slug"),
+server.tool("wp_plugin_delete", "Permanently delete a WordPress plugin from the filesystem. The plugin must be deactivated first. This cannot be undone.", {
+  slug: z.string().describe("The plugin slug to delete. The plugin must be deactivated before deletion."),
 }, async ({ slug }) => ({
   content: [{ type: "text", text: JSON.stringify(await tools.wp_plugin_delete(slug), null, 2) }],
 }));
 
-server.tool("wp_plugin_search", "Search wordpress.org plugin directory", {
-  term: z.string().describe("Search term"),
+server.tool("wp_plugin_search", "Search the official wordpress.org plugin directory for plugins matching a search term. Returns top 10 results with name, slug, rating, and active install count.", {
+  term: z.string().describe("Search term to find plugins (e.g. 'seo', 'contact form', 'e-commerce')"),
 }, async ({ term }) => ({
   content: [{ type: "text", text: JSON.stringify(await tools.wp_plugin_search(term), null, 2) }],
 }));
 
 // ─── Themes ────────────────────────────────────────────────
-server.tool("wp_theme_list", "List all installed themes", {}, async () => ({
+server.tool("wp_theme_list", "List all installed WordPress themes with their name, status (active/inactive), version, and update availability. Returns a JSON array.", {}, async () => ({
   content: [{ type: "text", text: JSON.stringify(await tools.wp_theme_list(), null, 2) }],
 }));
 
-server.tool("wp_theme_install", "Install a theme from wordpress.org", {
-  slug: z.string().describe("Theme slug"),
-  activate: z.boolean().optional().describe("Activate after install"),
+server.tool("wp_theme_install", "Install a WordPress theme from the official wordpress.org theme directory. Optionally activate it immediately.", {
+  slug: z.string().describe("Theme slug from wordpress.org (e.g. 'twentytwentyfour', 'astra', 'flavor')"),
+  activate: z.boolean().optional().describe("Whether to activate the theme immediately after installation. Defaults to false."),
 }, async ({ slug, activate }) => ({
   content: [{ type: "text", text: JSON.stringify(await tools.wp_theme_install(slug, activate), null, 2) }],
 }));
@@ -87,9 +87,9 @@ server.tool("wp_theme_delete", "Delete a theme", {
 }));
 
 // ─── Posts ──────────────────────────────────────────────────
-server.tool("wp_post_list", "List posts of any type", {
-  post_type: z.string().optional().describe("Post type (post, page, product, etc.)"),
-  count: z.number().optional().describe("Number of posts to return"),
+server.tool("wp_post_list", "List WordPress posts, pages, or any custom post type. Returns ID, title, status, date, and type for each item.", {
+  post_type: z.string().optional().describe("WordPress post type to query. Common types: 'post', 'page', 'product' (WooCommerce), 'attachment'. Defaults to 'post'."),
+  count: z.number().optional().describe("Maximum number of posts to return. Defaults to 20."),
 }, async ({ post_type, count }) => ({
   content: [{ type: "text", text: JSON.stringify(await tools.wp_post_list(post_type, count), null, 2) }],
 }));
@@ -100,11 +100,11 @@ server.tool("wp_post_get", "Get a single post by ID", {
   content: [{ type: "text", text: JSON.stringify(await tools.wp_post_get(id), null, 2) }],
 }));
 
-server.tool("wp_post_create", "Create a new post or page", {
-  title: z.string().describe("Post title"),
-  content: z.string().describe("Post content (HTML)"),
-  post_type: z.string().optional().describe("Post type (default: post)"),
-  status: z.string().optional().describe("Post status: draft, publish, pending, private"),
+server.tool("wp_post_create", "Create a new WordPress post, page, or custom post type entry. Returns the new post ID. Content supports full HTML.", {
+  title: z.string().describe("The title of the post/page to create"),
+  content: z.string().describe("The body content in HTML format. Supports Gutenberg block markup, shortcodes, and plain HTML."),
+  post_type: z.string().optional().describe("WordPress post type: 'post', 'page', 'product', or any registered CPT. Defaults to 'post'."),
+  status: z.string().optional().describe("Publication status: 'draft' (default), 'publish' (live immediately), 'pending' (needs review), 'private' (visible to admins only)"),
 }, async ({ title, content, post_type, status }) => ({
   content: [{ type: "text", text: JSON.stringify(await tools.wp_post_create(title, content, post_type, status), null, 2) }],
 }));
@@ -184,8 +184,8 @@ server.tool("wp_media_import", "Import media from URL", {
 }));
 
 // ─── Database ──────────────────────────────────────────────
-server.tool("wp_db_query", "Execute a raw SQL query (read-only recommended)", {
-  sql: z.string().describe("SQL query to execute"),
+server.tool("wp_db_query", "Execute a raw SQL query against the WordPress database. Use for read-only SELECT queries. WARNING: Write queries (INSERT, UPDATE, DELETE) can damage the database — use with caution.", {
+  sql: z.string().describe("SQL query to execute. Use SELECT for reads. Tables are prefixed with 'wp_' by default (e.g. 'SELECT * FROM wp_options WHERE option_name = \"blogname\"')"),
 }, async ({ sql }) => ({
   content: [{ type: "text", text: JSON.stringify(await tools.wp_db_query(sql), null, 2) }],
 }));
@@ -196,10 +196,10 @@ server.tool("wp_db_export", "Export database to SQL file", {
   content: [{ type: "text", text: JSON.stringify(await tools.wp_db_export(filename), null, 2) }],
 }));
 
-server.tool("wp_search_replace", "Search and replace in database", {
-  old_value: z.string().describe("String to search for"),
-  new_value: z.string().describe("Replacement string"),
-  dry_run: z.boolean().optional().describe("Preview changes without applying (default: true)"),
+server.tool("wp_search_replace", "Search and replace strings across all WordPress database tables. Essential for domain migrations (e.g. staging to production). Handles serialized data correctly.", {
+  old_value: z.string().describe("String to search for (e.g. 'http://staging.example.com', 'old-domain.com')"),
+  new_value: z.string().describe("Replacement string (e.g. 'https://example.com', 'new-domain.com')"),
+  dry_run: z.boolean().optional().describe("Preview changes without applying them. Defaults to true for safety. Set to false to actually perform the replacement."),
 }, async ({ old_value, new_value, dry_run }) => ({
   content: [{ type: "text", text: JSON.stringify(await tools.wp_search_replace(old_value, new_value, dry_run), null, 2) }],
 }));
