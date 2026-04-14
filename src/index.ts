@@ -241,6 +241,95 @@ server.tool("wp_cli_raw", "Execute any WP-CLI command directly", {
   content: [{ type: "text", text: JSON.stringify(await tools.wp_cli_raw(command), null, 2) }],
 }));
 
+// ─── Theme Files ───────────────────────────────────────────
+server.tool("wp_theme_file_list", "List all files in a WordPress theme directory. Returns file paths and sizes. Defaults to the active theme if no theme specified.", {
+  theme: z.string().optional().describe("Theme slug. Defaults to the currently active theme."),
+}, async ({ theme }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wp_theme_file_list(theme), null, 2) }],
+}));
+
+server.tool("wp_theme_file_read", "Read the contents of a file in a WordPress theme. Use this to inspect template files, functions.php, style.css, or any theme file.", {
+  filepath: z.string().describe("Path relative to theme root (e.g. 'functions.php', 'template-parts/header.php', 'assets/css/custom.css')"),
+  theme: z.string().optional().describe("Theme slug. Defaults to the currently active theme."),
+}, async ({ filepath, theme }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wp_theme_file_read(filepath, theme), null, 2) }],
+}));
+
+server.tool("wp_theme_file_write", "Create or overwrite a file in a WordPress theme. Use this to edit templates, add new PHP files, modify CSS/JS, or create entirely new theme files. Directories are created automatically.", {
+  filepath: z.string().describe("Path relative to theme root (e.g. 'functions.php', 'template-parts/hero.php', 'assets/js/custom.js')"),
+  content: z.string().describe("Full file content to write. For PHP files, include the opening <?php tag."),
+  theme: z.string().optional().describe("Theme slug. Defaults to the currently active theme."),
+}, async ({ filepath, content, theme }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wp_theme_file_write(filepath, content, theme), null, 2) }],
+}));
+
+server.tool("wp_theme_file_delete", "Delete a file from a WordPress theme. Cannot be undone.", {
+  filepath: z.string().describe("Path relative to theme root to delete"),
+  theme: z.string().optional().describe("Theme slug. Defaults to the currently active theme."),
+}, async ({ filepath, theme }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wp_theme_file_delete(filepath, theme), null, 2) }],
+}));
+
+// ─── PHP Eval ──────────────────────────────────────────────
+server.tool("wp_eval", "Execute arbitrary PHP code in the WordPress environment. Has access to all WordPress functions, hooks, and the database. Use for custom queries, data manipulation, or anything not covered by other tools.", {
+  code: z.string().describe("PHP code to execute (without <?php tag). Has full access to WordPress APIs. Use 'echo' to return output. Example: 'echo json_encode(wp_get_nav_menus());'"),
+}, async ({ code }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wp_eval(code), null, 2) }],
+}));
+
+// ─── Sidebars & Widgets ────────────────────────────────────
+server.tool("wp_sidebar_list", "List all registered widget areas (sidebars) in the active theme.", {}, async () => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wp_sidebar_list(), null, 2) }],
+}));
+
+server.tool("wp_widget_list", "List all widgets in a specific sidebar or all sidebars.", {
+  sidebar: z.string().optional().describe("Sidebar ID to list widgets for. If omitted, lists all sidebars."),
+}, async ({ sidebar }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wp_widget_list(sidebar), null, 2) }],
+}));
+
+// ─── Taxonomy & Terms ──────────────────────────────────────
+server.tool("wp_term_list", "List all terms in a taxonomy (categories, tags, or custom taxonomies). Returns term ID, name, slug, and post count.", {
+  taxonomy: z.string().describe("Taxonomy name: 'category', 'post_tag', 'product_cat' (WooCommerce), or any custom taxonomy"),
+}, async ({ taxonomy }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wp_term_list(taxonomy), null, 2) }],
+}));
+
+server.tool("wp_term_create", "Create a new term in a taxonomy (category, tag, or custom taxonomy).", {
+  taxonomy: z.string().describe("Taxonomy name: 'category', 'post_tag', or custom taxonomy"),
+  name: z.string().describe("Term name (e.g. 'Technology', 'Featured')"),
+  slug: z.string().optional().describe("URL-friendly slug. Auto-generated from name if not provided."),
+}, async ({ taxonomy, name, slug }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wp_term_create(taxonomy, name, slug), null, 2) }],
+}));
+
+// ─── Post Meta ─────────────────────────────────────────────
+server.tool("wp_post_meta_get", "Get a specific meta value for a post. Used for custom fields, ACF fields, WooCommerce product data, etc.", {
+  post_id: z.number().describe("Post ID"),
+  key: z.string().describe("Meta key (e.g. '_thumbnail_id', '_price', 'custom_field_name')"),
+}, async ({ post_id, key }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wp_post_meta_get(post_id, key), null, 2) }],
+}));
+
+server.tool("wp_post_meta_update", "Set or update a meta value for a post. Used for custom fields, featured images, WooCommerce data, etc.", {
+  post_id: z.number().describe("Post ID"),
+  key: z.string().describe("Meta key to set"),
+  value: z.string().describe("Meta value to store"),
+}, async ({ post_id, key, value }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wp_post_meta_update(post_id, key, value), null, 2) }],
+}));
+
+server.tool("wp_post_meta_list", "List all meta key-value pairs for a post. Shows custom fields, ACF data, WooCommerce product meta, SEO meta, etc.", {
+  post_id: z.number().describe("Post ID to list meta for"),
+}, async ({ post_id }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wp_post_meta_list(post_id), null, 2) }],
+}));
+
+// ─── Site Info ─────────────────────────────────────────────
+server.tool("wp_site_info", "Get a comprehensive overview of the WordPress installation including version, site URL, site name, active theme, and active plugin count. Great starting point for understanding a site.", {}, async () => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wp_site_info(), null, 2) }],
+}));
+
 // ─── Start server ──────────────────────────────────────────
 async function main() {
   const transport = new StdioServerTransport();

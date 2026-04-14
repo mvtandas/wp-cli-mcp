@@ -274,6 +274,162 @@ export async function wp_cache_flush() {
 }
 
 // ============================================================
+// THEME FILE MANAGEMENT
+// ============================================================
+
+export async function wp_theme_file_list(theme?: string) {
+  // Get active theme if not specified
+  if (!theme) {
+    const { stdout } = await wpCli(["theme", "list", "--status=active", "--field=name"], globalOptions);
+    theme = stdout.trim();
+  }
+  const { stdout } = await wpCli(["eval", `
+    $theme_dir = get_theme_root() . '/${theme}';
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($theme_dir));
+    $result = [];
+    foreach ($files as $file) {
+      if ($file->isFile()) {
+        $path = str_replace($theme_dir . '/', '', $file->getPathname());
+        $result[] = ['path' => $path, 'size' => $file->getSize()];
+      }
+    }
+    echo json_encode($result);
+  `.replace(/\n/g, ' ')], globalOptions);
+  try {
+    return JSON.parse(stdout);
+  } catch {
+    return { files: stdout };
+  }
+}
+
+export async function wp_theme_file_read(filepath: string, theme?: string) {
+  if (!theme) {
+    const { stdout } = await wpCli(["theme", "list", "--status=active", "--field=name"], globalOptions);
+    theme = stdout.trim();
+  }
+  const { stdout } = await wpCli(["eval", `
+    $theme_dir = get_theme_root() . '/${theme}';
+    $file = $theme_dir . '/${filepath}';
+    if (file_exists($file)) {
+      echo file_get_contents($file);
+    } else {
+      echo 'FILE_NOT_FOUND';
+    }
+  `.replace(/\n/g, ' ')], globalOptions);
+  if (stdout === 'FILE_NOT_FOUND') {
+    throw new Error(`File not found: ${filepath} in theme ${theme}`);
+  }
+  return { theme, path: filepath, content: stdout };
+}
+
+export async function wp_theme_file_write(filepath: string, content: string, theme?: string) {
+  if (!theme) {
+    const { stdout } = await wpCli(["theme", "list", "--status=active", "--field=name"], globalOptions);
+    theme = stdout.trim();
+  }
+  // Write content via wp eval with base64 to avoid escaping issues
+  const b64 = Buffer.from(content).toString('base64');
+  const { stdout } = await wpCli(["eval", `
+    $theme_dir = get_theme_root() . '/${theme}';
+    $file = $theme_dir . '/${filepath}';
+    $dir = dirname($file);
+    if (!is_dir($dir)) { wp_mkdir_p($dir); }
+    $content = base64_decode('${b64}');
+    $result = file_put_contents($file, $content);
+    echo $result !== false ? 'OK:' . strlen($content) . ' bytes' : 'FAILED';
+  `.replace(/\n/g, ' ')], globalOptions);
+  return { theme, path: filepath, message: stdout };
+}
+
+export async function wp_theme_file_delete(filepath: string, theme?: string) {
+  if (!theme) {
+    const { stdout } = await wpCli(["theme", "list", "--status=active", "--field=name"], globalOptions);
+    theme = stdout.trim();
+  }
+  const { stdout } = await wpCli(["eval", `
+    $theme_dir = get_theme_root() . '/${theme}';
+    $file = $theme_dir . '/${filepath}';
+    echo file_exists($file) && unlink($file) ? 'DELETED' : 'NOT_FOUND';
+  `.replace(/\n/g, ' ')], globalOptions);
+  return { theme, path: filepath, message: stdout };
+}
+
+// ============================================================
+// PHP EVAL (powerful escape hatch)
+// ============================================================
+
+export async function wp_eval(code: string) {
+  const { stdout, stderr } = await wpCli(["eval", code], globalOptions);
+  return { output: stdout, errors: stderr || undefined };
+}
+
+// ============================================================
+// WIDGET & SIDEBAR
+// ============================================================
+
+export async function wp_sidebar_list() {
+  return wpCliJson(["sidebar", "list"], globalOptions);
+}
+
+export async function wp_widget_list(sidebar?: string) {
+  const args = ["widget", "list"];
+  if (sidebar) args.push(sidebar);
+  return wpCliJson(args, globalOptions);
+}
+
+// ============================================================
+// TAXONOMY & TERMS
+// ============================================================
+
+export async function wp_term_list(taxonomy: string) {
+  return wpCliJson(["term", "list", taxonomy, "--fields=term_id,name,slug,count"], globalOptions);
+}
+
+export async function wp_term_create(taxonomy: string, name: string, slug?: string) {
+  const args = ["term", "create", taxonomy, name, "--porcelain"];
+  if (slug) args.push(`--slug=${slug}`);
+  const { stdout } = await wpCli(args, globalOptions);
+  return { id: parseInt(stdout), message: `Created term "${name}" in ${taxonomy} (ID: ${stdout})` };
+}
+
+// ============================================================
+// POST META
+// ============================================================
+
+export async function wp_post_meta_get(post_id: number, key: string) {
+  const { stdout } = await wpCli(["post", "meta", "get", String(post_id), key], globalOptions);
+  return { post_id, key, value: stdout };
+}
+
+export async function wp_post_meta_update(post_id: number, key: string, value: string) {
+  const { stdout } = await wpCli(["post", "meta", "update", String(post_id), key, value], globalOptions);
+  return { message: stdout || "Updated" };
+}
+
+export async function wp_post_meta_list(post_id: number) {
+  return wpCliJson(["post", "meta", "list", String(post_id)], globalOptions);
+}
+
+// ============================================================
+// SITE INFO
+// ============================================================
+
+export async function wp_site_info() {
+  const version = await wp_core_version();
+  const siteUrl = await wp_option_get("siteurl");
+  const blogName = await wp_option_get("blogname");
+  const theme = await wpCli(["theme", "list", "--status=active", "--field=name"], globalOptions);
+  const pluginCount = await wpCli(["plugin", "list", "--status=active", "--format=count"], globalOptions);
+  return {
+    wordpress_version: version.version,
+    site_url: siteUrl.value,
+    site_name: blogName.value,
+    active_theme: theme.stdout.trim(),
+    active_plugins: parseInt(pluginCount.stdout) || 0,
+  };
+}
+
+// ============================================================
 // GENERAL WP-CLI (escape hatch)
 // ============================================================
 
