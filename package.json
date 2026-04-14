@@ -1,0 +1,40 @@
+{
+  "name": "wp-cli-mcp",
+  "version": "1.0.0",
+  "description": "MCP server that gives AI tools full WordPress management via WP-CLI — themes, plugins, posts, menus, users, database, and more",
+  "keywords": [
+    "mcp",
+    "wordpress",
+    "wp-cli",
+    "claude",
+    "ai",
+    "model-context-protocol"
+  ],
+  "author": "Mustafa Vatandas <mvtandas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mvtandas/wp-cli-mcp"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "wp-cli-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}
