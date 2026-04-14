@@ -430,6 +430,133 @@ export async function wp_site_info() {
 }
 
 // ============================================================
+// ============================================================
+// WOOCOMMERCE
+// ============================================================
+
+export async function wc_product_list(count: number = 20) {
+  return wpCliJson([
+    "post", "list",
+    "--post_type=product",
+    `--posts_per_page=${count}`,
+    "--fields=ID,post_title,post_status,post_date",
+  ], globalOptions);
+}
+
+export async function wc_product_create(
+  name: string,
+  regular_price: string,
+  product_type: string = "simple",
+  description: string = "",
+  status: string = "publish"
+) {
+  const { stdout } = await wpCli([
+    "post", "create",
+    `--post_title=${name}`,
+    `--post_content=${description}`,
+    "--post_type=product",
+    `--post_status=${status}`,
+    "--porcelain",
+  ], globalOptions);
+  const id = parseInt(stdout);
+  // Set product meta
+  await wpCli(["post", "meta", "update", String(id), "_regular_price", regular_price], globalOptions);
+  await wpCli(["post", "meta", "update", String(id), "_price", regular_price], globalOptions);
+  await wpCli(["post", "meta", "update", String(id), "_product_type", product_type], globalOptions);
+  await wpCli(["post", "meta", "update", String(id), "_visibility", "visible"], globalOptions);
+  await wpCli(["post", "meta", "update", String(id), "_stock_status", "instock"], globalOptions);
+  return { id, message: `Created product "${name}" (ID: ${id}, price: ${regular_price})` };
+}
+
+export async function wc_product_get(id: number) {
+  const post = await wpCliJson(["post", "get", String(id)], globalOptions);
+  const meta = await wpCliJson(["post", "meta", "list", String(id)], globalOptions);
+  const price = meta.find((m: any) => m.meta_key === "_regular_price")?.meta_value;
+  const salePrice = meta.find((m: any) => m.meta_key === "_sale_price")?.meta_value;
+  const sku = meta.find((m: any) => m.meta_key === "_sku")?.meta_value;
+  const stock = meta.find((m: any) => m.meta_key === "_stock_status")?.meta_value;
+  return { ...post, price, sale_price: salePrice, sku, stock_status: stock };
+}
+
+export async function wc_product_update_price(id: number, regular_price: string, sale_price?: string) {
+  await wpCli(["post", "meta", "update", String(id), "_regular_price", regular_price], globalOptions);
+  await wpCli(["post", "meta", "update", String(id), "_price", sale_price || regular_price], globalOptions);
+  if (sale_price) {
+    await wpCli(["post", "meta", "update", String(id), "_sale_price", sale_price], globalOptions);
+  }
+  return { message: `Updated product ${id} price to ${regular_price}${sale_price ? ` (sale: ${sale_price})` : ''}` };
+}
+
+export async function wc_order_list(count: number = 20, status?: string) {
+  const args = [
+    "post", "list",
+    "--post_type=shop_order",
+    `--posts_per_page=${count}`,
+    "--fields=ID,post_title,post_status,post_date",
+  ];
+  if (status) args.push(`--post_status=${status}`);
+  return wpCliJson(args, globalOptions);
+}
+
+export async function wc_order_get(id: number) {
+  const post = await wpCliJson(["post", "get", String(id)], globalOptions);
+  const meta = await wpCliJson(["post", "meta", "list", String(id)], globalOptions);
+  const total = meta.find((m: any) => m.meta_key === "_order_total")?.meta_value;
+  const currency = meta.find((m: any) => m.meta_key === "_order_currency")?.meta_value;
+  const billing_email = meta.find((m: any) => m.meta_key === "_billing_email")?.meta_value;
+  const payment_method = meta.find((m: any) => m.meta_key === "_payment_method_title")?.meta_value;
+  return { ...post, total, currency, billing_email, payment_method };
+}
+
+export async function wc_coupon_create(code: string, discount_type: string, amount: string) {
+  const { stdout } = await wpCli([
+    "post", "create",
+    `--post_title=${code}`,
+    "--post_type=shop_coupon",
+    "--post_status=publish",
+    "--porcelain",
+  ], globalOptions);
+  const id = parseInt(stdout);
+  await wpCli(["post", "meta", "update", String(id), "discount_type", discount_type], globalOptions);
+  await wpCli(["post", "meta", "update", String(id), "coupon_amount", amount], globalOptions);
+  return { id, message: `Created coupon "${code}" (${discount_type}: ${amount})` };
+}
+
+// ============================================================
+// CRON JOBS
+// ============================================================
+
+export async function wp_cron_list() {
+  return wpCliJson(["cron", "event", "list"], globalOptions);
+}
+
+export async function wp_cron_run(hook: string) {
+  const { stdout } = await wpCli(["cron", "event", "run", hook], globalOptions);
+  return { message: stdout || `Ran cron event: ${hook}` };
+}
+
+// ============================================================
+// MAINTENANCE
+// ============================================================
+
+export async function wp_maintenance_mode(enable: boolean) {
+  const { stdout } = await wpCli([
+    "maintenance-mode", enable ? "activate" : "deactivate",
+  ], globalOptions);
+  return { message: stdout || `Maintenance mode ${enable ? 'enabled' : 'disabled'}` };
+}
+
+export async function wp_transient_delete(key: string) {
+  const { stdout } = await wpCli(["transient", "delete", key], globalOptions);
+  return { message: stdout || `Deleted transient: ${key}` };
+}
+
+export async function wp_transient_delete_all() {
+  const { stdout } = await wpCli(["transient", "delete", "--all"], globalOptions);
+  return { message: stdout || "All transients deleted" };
+}
+
+// ============================================================
 // GENERAL WP-CLI (escape hatch)
 // ============================================================
 

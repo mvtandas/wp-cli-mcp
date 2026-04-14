@@ -330,6 +330,80 @@ server.tool("wp_site_info", "Get a comprehensive overview of the WordPress insta
   content: [{ type: "text", text: JSON.stringify(await tools.wp_site_info(), null, 2) }],
 }));
 
+// ─── WooCommerce ───────────────────────────────────────────
+server.tool("wc_product_list", "List WooCommerce products with ID, title, status, and date. Requires WooCommerce to be installed and active.", {
+  count: z.number().optional().describe("Number of products to return. Defaults to 20."),
+}, async ({ count }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wc_product_list(count), null, 2) }],
+}));
+
+server.tool("wc_product_create", "Create a new WooCommerce product with price and type. Sets up all required product meta automatically.", {
+  name: z.string().describe("Product name"),
+  regular_price: z.string().describe("Regular price (e.g. '29.99')"),
+  product_type: z.string().optional().describe("Product type: 'simple' (default), 'variable', 'grouped', 'external'"),
+  description: z.string().optional().describe("Product description (HTML)"),
+  status: z.string().optional().describe("'publish' (default) or 'draft'"),
+}, async ({ name, regular_price, product_type, description, status }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wc_product_create(name, regular_price, product_type, description, status), null, 2) }],
+}));
+
+server.tool("wc_product_get", "Get detailed WooCommerce product info including price, sale price, SKU, and stock status.", {
+  id: z.number().describe("Product (post) ID"),
+}, async ({ id }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wc_product_get(id), null, 2) }],
+}));
+
+server.tool("wc_product_update_price", "Update WooCommerce product pricing. Set regular price and optional sale price.", {
+  id: z.number().describe("Product ID"),
+  regular_price: z.string().describe("New regular price (e.g. '39.99')"),
+  sale_price: z.string().optional().describe("Optional sale price. Leave empty to remove sale."),
+}, async ({ id, regular_price, sale_price }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wc_product_update_price(id, regular_price, sale_price), null, 2) }],
+}));
+
+server.tool("wc_order_list", "List WooCommerce orders with ID, status, and date.", {
+  count: z.number().optional().describe("Number of orders to return. Defaults to 20."),
+  status: z.string().optional().describe("Filter by order status: 'wc-processing', 'wc-completed', 'wc-on-hold', 'wc-pending'"),
+}, async ({ count, status }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wc_order_list(count, status), null, 2) }],
+}));
+
+server.tool("wc_order_get", "Get detailed WooCommerce order info including total, currency, billing email, and payment method.", {
+  id: z.number().describe("Order ID"),
+}, async ({ id }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wc_order_get(id), null, 2) }],
+}));
+
+server.tool("wc_coupon_create", "Create a WooCommerce discount coupon.", {
+  code: z.string().describe("Coupon code (e.g. 'SUMMER20', 'FREESHIP')"),
+  discount_type: z.string().describe("Discount type: 'percent' (percentage off), 'fixed_cart' (fixed amount off cart), 'fixed_product' (fixed amount off product)"),
+  amount: z.string().describe("Discount amount (e.g. '20' for 20% or $20)"),
+}, async ({ code, discount_type, amount }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wc_coupon_create(code, discount_type, amount), null, 2) }],
+}));
+
+// ─── Cron ──────────────────────────────────────────────────
+server.tool("wp_cron_list", "List all scheduled WordPress cron events with hook name, next run time, and recurrence.", {}, async () => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wp_cron_list(), null, 2) }],
+}));
+
+server.tool("wp_cron_run", "Manually trigger a specific WordPress cron event by its hook name.", {
+  hook: z.string().describe("Cron hook name (e.g. 'wp_update_plugins', 'woocommerce_scheduled_sales')"),
+}, async ({ hook }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wp_cron_run(hook), null, 2) }],
+}));
+
+// ─── Maintenance ───────────────────────────────────────────
+server.tool("wp_maintenance_mode", "Enable or disable WordPress maintenance mode. When enabled, visitors see a 'Briefly unavailable for maintenance' message.", {
+  enable: z.boolean().describe("true to enable maintenance mode, false to disable"),
+}, async ({ enable }) => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wp_maintenance_mode(enable), null, 2) }],
+}));
+
+server.tool("wp_transient_delete_all", "Delete all WordPress transients (cached temporary data). Useful for clearing stale caches.", {}, async () => ({
+  content: [{ type: "text", text: JSON.stringify(await tools.wp_transient_delete_all(), null, 2) }],
+}));
+
 // ─── Start server ──────────────────────────────────────────
 async function main() {
   const transport = new StdioServerTransport();
