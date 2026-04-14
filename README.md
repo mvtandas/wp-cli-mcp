@@ -9,7 +9,7 @@
 
 <p align="center">
   <b>MCP server that gives AI tools full WordPress management via WP-CLI.</b><br/>
-  Themes, plugins, posts, menus, users, database, scaffolding — 30+ tools.
+  Themes, plugins, posts, menus, users, database, scaffolding — 45+ tools.
 </p>
 
 ---
@@ -36,14 +36,20 @@ All powered by WP-CLI under the hood. Works locally or over SSH to remote server
 | **Core** | `wp_core_version`, `wp_core_check_update` |
 | **Plugins** | `wp_plugin_list`, `wp_plugin_install`, `wp_plugin_activate`, `wp_plugin_deactivate`, `wp_plugin_delete`, `wp_plugin_search` |
 | **Themes** | `wp_theme_list`, `wp_theme_install`, `wp_theme_activate`, `wp_theme_delete` |
+| **Theme Files** | `wp_theme_file_list`, `wp_theme_file_read`, `wp_theme_file_write`, `wp_theme_file_delete` |
 | **Posts** | `wp_post_list`, `wp_post_get`, `wp_post_create`, `wp_post_update`, `wp_post_delete` |
+| **Post Meta** | `wp_post_meta_get`, `wp_post_meta_update`, `wp_post_meta_list` |
+| **Taxonomies** | `wp_term_list`, `wp_term_create` |
 | **Users** | `wp_user_list`, `wp_user_create` |
 | **Options** | `wp_option_get`, `wp_option_update` |
 | **Menus** | `wp_menu_list`, `wp_menu_create`, `wp_menu_item_add`, `wp_menu_location_assign` |
+| **Widgets** | `wp_sidebar_list`, `wp_widget_list` |
 | **Media** | `wp_media_import` |
 | **Database** | `wp_db_query`, `wp_db_export`, `wp_search_replace` |
 | **Scaffold** | `wp_scaffold_theme`, `wp_scaffold_plugin`, `wp_scaffold_block` |
 | **Cache** | `wp_rewrite_flush`, `wp_cache_flush` |
+| **PHP** | `wp_eval` — execute any PHP in WordPress context |
+| **Site** | `wp_site_info` — full site overview |
 | **Raw** | `wp_cli_raw` — run any WP-CLI command |
 
 ## Requirements
