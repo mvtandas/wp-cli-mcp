@@ -1,6 +1,6 @@
 {
   "name": "wp-cli-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP server that gives AI tools full WordPress management via WP-CLI — themes, plugins, posts, menus, users, database, and more",
   "keywords": [
     "mcp",
