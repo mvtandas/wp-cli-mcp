@@ -15,6 +15,7 @@ setGlobalOptions({
   path: process.env.WP_PATH,
   ssh: process.env.WP_SSH,
   url: process.env.WP_URL,
+  sshDirect: process.env.WP_SSH_DIRECT === "true",
 });
 
 // ─── Core ──────────────────────────────────────────────────
