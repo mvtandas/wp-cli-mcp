@@ -98,6 +98,24 @@ Add to your Claude Code MCP settings (`~/.claude/claude_desktop_config.json`):
 }
 ```
 
+### Remote server via direct SSH (no local WP-CLI required)
+
+If you don't have WP-CLI installed locally, set `WP_SSH_DIRECT` to `true`. The server will invoke `ssh` directly and run `wp` on the remote host:
+
+```json
+{
+  "mcpServers": {
+    "wordpress": {
+      "command": "wp-cli-mcp",
+      "env": {
+        "WP_SSH": "user@yourserver.com:/var/www/html",
+        "WP_SSH_DIRECT": "true"
+      }
+    }
+  }
+}
+```
+
 ### Environment Variables
 
 | Variable | Description | Example |
@@ -105,6 +123,7 @@ Add to your Claude Code MCP settings (`~/.claude/claude_desktop_config.json`):
 | `WP_PATH` | Local WordPress path | `/var/www/html` |
 | `WP_SSH` | SSH connection string | `user@host:/path/to/wp` |
 | `WP_URL` | Site URL (multisite) | `https://example.com` |
+| `WP_SSH_DIRECT` | Use direct SSH instead of local `wp --ssh` | `true` |
 
 ## Examples
 
