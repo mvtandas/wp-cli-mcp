@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/mvtandas-wp-cli-mcp-badge.png)](https://mseep.ai/app/mvtandas-wp-cli-mcp)
+
 # wp-cli-mcp
 
 <p align="center">
